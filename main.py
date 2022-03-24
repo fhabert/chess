@@ -1,5 +1,7 @@
 import gc
 
+from sklearn.feature_selection import SelectFpr
+
 COLUMNS = 8
 LINES = 8
 
@@ -8,7 +10,7 @@ class Game(object):
         self.board = [[0]*LINES for i in range(LINES)]
         self.initiate_board()
         self.turn = "white"
-        self.pieceTaken = []
+        self.pieceTaken = { "black": [], "white": [] }
         self.posDir = self.checkDir()
         pass
 
@@ -32,8 +34,10 @@ class Game(object):
             self.board[7][i] = white_s[i]
         pass
 
-    def makeMove(self, piecePos, nextPos):
+    def getPiece(self, piecePos, isMate=False):
         name = self.board[piecePos[0]][piecePos[1]]
+        if name == 0:
+            return None, None
         if "p" in name:
             piece = Pion(piecePos)
         elif "t" in name:
@@ -43,14 +47,37 @@ class Game(object):
         elif "d" in name:
             piece = Dame(piecePos)
         elif "r" in name:
-            piece = Roi(piecePos)
-        elif "c" in name:
+            piece = Roi(piecePos, isMate)
+        else:
             piece = Cheval(piecePos)
-        posDir = piece.posDir
-        if nextPos in posDir:
+        return piece, name
+
+    def makeMove(self, piecePos, nextPos, piece, name):
+        if self.board[nextPos[0]][nextPos[1]] != 0 and "r" in name:
+            return False
+        # print(piece.posDir)
+        # print(nextPos)
+        if nextPos in piece.posDir:
             temp = self.board[nextPos[0]][nextPos[1]]
-            if temp != 0:
-                self.pieceTaken.append(temp)
+            if temp == 0 and "r" in name:
+                if nextPos == (0, 6):
+                    self.board[0][7] = 0
+                    self.board[0][5] = "tb"
+                elif nextPos == (0, 2):
+                    self.board[0][0] = 0
+                    self.board[0][3] = "tb"
+                elif nextPos == (7, 6):
+                    self.board[7][7] = 0
+                    self.board[7][5] = "tw"
+                elif nextPos == (7, 2):
+                    self.board[7][0] = 0
+                    self.board[7][3] = "tw"
+                self.board[nextPos[0]][nextPos[1]] = name
+            elif temp != 0:
+                if "w" in name:
+                    self.pieceTaken["white"].append(temp)
+                else:
+                    self.pieceTaken["black"].append(temp)
             self.board[nextPos[0]][nextPos[1]] = name
             self.board[piecePos[0]][piecePos[1]] = 0
             self.posDir
@@ -59,6 +86,15 @@ class Game(object):
             return True
         else:
             return False
+        
+    def getNewPiece(self, color, pos):
+        pieces = ["t", "c", "f", "d"]
+        print(pieces)
+        pieceSelect = input("Quelle piece choisissez-vous ?")
+        name = f"{pieceSelect}{color}"
+        self.board[pos[0]][pos[1]] = name
+        self.posDir
+        pass
         
 
 game = Game()
@@ -79,6 +115,9 @@ def draw_game():
                 print(game.board[i][j], end="")
             print(" ", end="")
         print("|", end="")
+    print("\n")
+    print("Black: {}".format(game.pieceTaken["black"]))
+    print("White: {}".format(game.pieceTaken["white"]))
     pass
 
 class Pion():
@@ -86,39 +125,42 @@ class Pion():
         self.pos = pos
         self.posDir = self.checkDir()
     
-    def checkDir(self):
+    def checkDir(self, kingCheck=False):
         posDir = []
         i = self.pos[0]
         j = self.pos[1]
-        if i > 0 and j < 7:
-            if game.turn == "black":
-                if i == 6 and game.board[i-2][j] == 0:
-                    posDir.append((i-2, j))
-                if game.board[i-1][j] == 0:
-                    posDir.append((i-1, j))
+        if game.turn == "white":
+            if i > 0:
+                if not kingCheck:
+                    if i == 6 and game.board[i-2][j] == 0:
+                        posDir.append((i-2, j))
+                    if game.board[i-1][j] == 0:
+                        posDir.append((i-1, j))
                 if j > 0 and j < 7:
-                    if game.board[i-1][j-1] != 0 and "w" in game.board[i-1][j-1]:
+                    if game.board[i-1][j-1] != 0 and "b" in game.board[i-1][j-1]:
                         posDir.append((i-1, j-1))
-                    if game.board[i-1][j+1] != 0 and "w" in game.board[i-1][j+1]:
+                    if game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]:
                         posDir.append((i-1, j+1))
-                if j == 0 and (game.board[i-1][j+1] != 0 and "w" in game.board[i-1][j+1]):
+                if j == 0 and (game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]):
                     posDir.append((i-1, j+1))
-                if j == 7 and (game.board[i-1][j-1] != 0 and "w" in game.board[i-1][j-1]):
+                if j == 7 and (game.board[i-1][j-1] != 0 and "b" in game.board[i-1][j-1]):
                     posDir.append((i-1, j-1))
-            else:
-                if i == 1 and game.board[i+2][j] == 0:
-                    posDir.append((i+2, j))
-                if game.board[i+1][j] == 0:
-                    posDir.append((i+1, j))
+        else:
+            if i < 7:
+                if not kingCheck:
+                    if i == 1 and game.board[i+2][j] == 0:
+                        posDir.append((i+2, j))
+                    if game.board[i+1][j] == 0:
+                        posDir.append((i+1, j))
                 if j > 0 and j < 7:
-                    if game.board[i+1][j-1] != 0 and "b" in game.board[i+1][j-1]:
+                    if game.board[i+1][j-1] != 0 and "w" in game.board[i+1][j-1]:
                         posDir.append((i+1, j-1))
-                    if game.board[i+1][j+1] != 0 and "b" in game.board[i+1][j+1]:
+                    if game.board[i+1][j+1] != 0 and "w" in game.board[i+1][j+1]:
                         posDir.append((i+1, j+1))
-                if j == 0 and (game.board[i+1][j+1] != 0 and "b" in game.board[i+1][j+1]):
+                if j == 0 and (game.board[i+1][j+1] != 0 and "w" in game.board[i+1][j+1]):
                     posDir.append((i+1, j+1))
-                if j == 7 and (game.board[i+1][j-1] != 0 and "b" in game.board[i+1][j-1]):
-                    posDir.append((i+1, j-1))
+                if j == 7 and (game.board[i+1][j-1] != 0 and "w" in game.board[i+1][j-1]):
+                        posDir.append((i+1, j-1))
         return posDir
 
 class Tour():
@@ -131,69 +173,45 @@ class Tour():
         i = self.pos[0]
         j = self.pos[1]
         if game.turn == "black":
-            while (i < 7 and game.board[i+1][j] == 0) or (game.board[i+1][j] != 0 and "w" in game.board[i+1][j]):
+            while (i < 7 and game.board[i+1][j] == 0) or (i < 7 and game.board[i+1][j] != 0 and "w" in game.board[i+1][j]):
                 i += 1
                 posDir.append((i, j))
-                if i < 7 and game.board[i+1][j] != 0 and "w" in game.board[i+1][j]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
-            while (i > 0 and game.board[i-1][j] == 0) or (game.board[i-1][j] != 0 and "w" in game.board[i-1][j]):
+            while (i > 0 and game.board[i-1][j] == 0) or (i > 0 and game.board[i-1][j] != 0 and "w" in game.board[i-1][j]):
                 i -= 1
                 posDir.append((i, j))
-                if i > 0 and game.board[i-1][j] != 0 and "w" in game.board[i-1][j]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
-            while (j > 0 and game.board[i][j-1] == 0) or (game.board[i][j-1] != 0 and "w" in game.board[i][j-1]):
+            while (j > 0 and game.board[i][j-1] == 0) or (j > 0 and game.board[i][j-1] != 0 and "w" in game.board[i][j-1]):
                 j -= 1
                 posDir.append((i, j))
-                if j > 0 and game.board[i][j-1] != 0 and "w" in game.board[i][j-1]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
-            while (j < 7 and game.board[i][j+1] == 0) or (game.board[i][j+1] != 0 and "w" in game.board[i][j+1]):
+            while (j < 7 and game.board[i][j+1] == 0) or (j < 7 and game.board[i][j+1] != 0 and "w" in game.board[i][j+1]):
                 j += 1
                 posDir.append((i, j))
-                if j < 0 and game.board[i][j+1] != 0 and "w" in game.board[i][j+1]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
         else:
-            while (i < 7 and game.board[i+1][j] == 0) or (game.board[i+1][j] != 0 and "b" in game.board[i+1][j]):
+            while (i < 7 and game.board[i+1][j] == 0) or (i < 7 and game.board[i+1][j] != 0 and "b" in game.board[i+1][j]):
                 i += 1
                 posDir.append((i, j))
-                if i < 7 and game.board[i+1][j] != 0 and "b" in game.board[i+1][j]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
-            while (i > 0 and game.board[i-1][j] == 0) or (game.board[i-1][j] != 0 and "b" in game.board[i-1][j]):
+            while (i > 0 and game.board[i-1][j] == 0) or (i > 0 and game.board[i-1][j] != 0 and "b" in game.board[i-1][j]):
                 i -= 1
                 posDir.append((i, j))
-                if i > 0 and game.board[i-1][j] != 0 and "b" in game.board[i-1][j]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
-            while (j > 0 and game.board[i][j-1] == 0) or (game.board[i][j-1] != 0 and "b" in game.board[i][j-1]):
+            while (j > 0 and game.board[i][j-1] == 0) or (j > 0 and game.board[i][j-1] != 0 and "b" in game.board[i][j-1]):
                 j -= 1
                 posDir.append((i, j))
-                if j > 0 and game.board[i][j-1] != 0 and "b" in game.board[i][j-1]:
-                    posDir.append((i, j))
-                    break
             i = self.pos[0]
             j = self.pos[1]
-            while (j < 0 and game.board[i][j+1] == 0) or (game.board[i][j+1] != 0 and "b" in game.board[i][j+1]):
+            while (j < 7 and game.board[i][j+1] == 0) or (j < 0 and game.board[i][j+1] != 0 and "b" in game.board[i][j+1]):
                 j += 1
                 posDir.append((i, j))
-                if j < 0 and game.board[i][j+1] != 0 and "b" in game.board[i][j+1]:
-                    posDir.append((i, j))
-                    break
         return posDir
 
 
@@ -207,77 +225,68 @@ class Fou:
         i = self.pos[0]
         j = self.pos[1]
         if game.turn == "black":
-            while (i < 7 and j < 7 and game.board[i+1][j+1] == 0) or (game.board[i+1][j+1] != 0 and "w" in game.board[i+1][j+1]):
+            while (i < 7 and j < 7 and game.board[i+1][j+1] == 0) or (i < 7 and j < 7 and game.board[i+1][j+1] != 0 and "w" in game.board[i+1][j+1]):
                 i += 1
                 j += 1
                 posDir.append((i, j))
-                if i < 7 and j < 7 and game.board[i+1][j+1] != 0 and "w" in game.board[i+1][j+1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
-            while (i > 0 and j < 7 and game.board[i-1][j+1] == 0) or (game.board[i-1][j+1] != 0 and "w" in game.board[i-1][j+1]):
+            while (i > 0 and j < 7 and game.board[i-1][j+1] == 0) or (i > 0 and j < 7 and game.board[i-1][j+1] != 0 and "w" in game.board[i-1][j+1]):
                 j += 1
                 i -= 1
                 posDir.append((i, j))
-                if i > 0 and j < 7 and game.board[i-1][j+1] != 0 and "w" in game.board[i-1][j+1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
-            while (j > 0 and i < 7 and game.board[i+1][j-1] == 0) or (game.board[i+1][j-1] != 0 and "w" in game.board[i+1][j-1]):
-                print(j, i)
+            while (j > 0 and i < 7 and game.board[i+1][j-1] == 0) or (j > 0 and i < 7 and game.board[i+1][j-1] != 0 and "w" in game.board[i+1][j-1]):
                 i += 1
                 j -= 1
                 posDir.append((i, j))
-                if j > 0 and i < 7 and game.board[i+1][j-1] != 0 and "w" in game.board[i+1][j-1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
-            while (j > 0 and i > 0 and game.board[i-1][j-1] == 0) or (game.board[i-1][j-1] != 0 and "w" in game.board[i-1][j-1]):
+            while (j > 0 and i > 0 and game.board[i-1][j-1] == 0) or (j > 0 and i > 0 and game.board[i-1][j-1] != 0 and "w" in game.board[i-1][j-1]):
                 i -= 1
                 j -= 1
                 posDir.append((i, j))
-                if j > 0 and i > 0 and game.board[i-1][j-1] != 0 and "w" in game.board[i-1][j-1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
         else:
-            while (i < 7 and j < 7 and game.board[i+1][j+1] == 0) or (game.board[i+1][j+1] != 0 and "b" in game.board[i+1][j+1]):
+            while (i < 7 and j < 7 and game.board[i+1][j+1] == 0) or (i < 7 and j < 7 and game.board[i+1][j+1] != 0 and "b" in game.board[i+1][j+1]):
                 i += 1
                 j += 1
                 posDir.append((i, j))
-                if i < 7 and j < 7 and game.board[i+1][j+1] != 0 and "b" in game.board[i+1][j+1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
-            while (i > 0 and j < 7 and game.board[i-1][j+1] == 0) or (game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]):
+            while (i > 0 and j < 7 and game.board[i-1][j+1] == 0) or (i > 0 and j < 7 and game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]):
                 i -= 1
                 j += 1
                 posDir.append((i, j))
-                if i > 0 and j < 7 and game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
-            while (j > 0 and i < 7 and game.board[i+1][j-1] == 0) or (game.board[i+1][j-1] != 0 and "b" in game.board[i+1][j-1]):
+            while (j > 0 and i < 7 and game.board[i+1][j-1] == 0) or (j > 0 and i < 7 and game.board[i+1][j-1] != 0 and "b" in game.board[i+1][j-1]):
                 j -= 1
                 i += 1
                 posDir.append((i, j))
-                if j > 0 and i < 7 and game.board[i+1][j-1] != 0 and "b" in game.board[i+1][j-1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
             i = self.pos[0]
             j = self.pos[1]
-            while (j > 0 and i < 7 and game.board[i-1][j+1] == 0) or (game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]):
-                j += 1
+            while (j > 0 and i > 0 and game.board[i-1][j-1] == 0) or (j > 0 and i > 0 and game.board[i-1][j-1] != 0 and "b" in game.board[i-1][j-1]):
+                j -= 1
                 i -= 1
                 posDir.append((i, j))
-                if j > 0 and i < 7 and game.board[i-1][j+1] != 0 and "b" in game.board[i-1][j+1]:
-                    posDir.append((i, j))
+                if game.board[i][j] != 0:
                     break
         return posDir
 
@@ -300,25 +309,70 @@ class Dame:
         return posDir
 
 class Roi:
-    def __init__(self, pos):
+    def __init__(self, pos, isMate):
         self.pos = pos
+        self.mate = isMate
         self.posDir = self.checkDir()
     
     def checkDir(self):
         posDir = []
         dame = Dame(self.pos)
         posDame = dame.posDir
-        # print(posDame)
         for item in posDame:
-            if (item[0] >= (self.pos[0] - 1) and (item[0] <= self.pos[0] +1)) and (item[1] >= (self.pos[1] - 1) and (item[1] <= self.pos[1] +1)):
-                print("hye")
+            if (item[0] >= (self.pos[0] - 1) and (item[0] <= self.pos[0] + 1)) and (item[1] >= (self.pos[1] - 1) and (item[1] <= self.pos[1] +1)):
                 posDir.append(item)
+        if game.turn == "black" and not self.mate:
+            if game.board[0][5] == 0 and game.board[0][6] == 0 and game.board[0][7] == "tb":
+                posDir.append((0, 6))
+            if game.board[0][1] == 0 and game.board[0][2] == 0 and game.board[0][3] == 0 and game.board[0][0] == "tb":
+                posDir.append((0, 2))
+        elif game.turn == "white" and not self.mate:
+            if game.board[7][5] == 0 and game.board[7][6] == 0 and game.board[7][7] == "tw":
+                posDir.append((7, 6))
+            if game.board[7][1] == 0 and game.board[7][2] == 0 and game.board[7][3] == 0 and game.board[7][0] == "tw":
+                posDir.append((7, 2))
         del dame
         gc.collect()
         return posDir
 
     def isMate(self):
-        pass
+        posWhite = []
+        posBlack = []
+        opposentPos = []
+        for i in range(0, COLUMNS):
+            for j in range(0, LINES):
+                if game.board[i][j] != 0 and "w" in game.board[i][j]:
+                    posWhite.append((i, j))
+                elif game.board[i][j] != 0 and "b" in game.board[i][j]:
+                    posBlack.append((i, j))
+        if game.turn == "black":
+            game.turn = "white"
+            for item in posWhite:
+                piece, name = game.getPiece(item)
+                if "p" in name:
+                    posDir = piece.checkDir(kingCheck=True)
+                else:
+                    posDir = piece.posDir
+                for pos in posDir:
+                    opposentPos.append(pos)
+            game.turn = "black"
+            if self.pos in opposentPos:
+                return self.mate
+            return self.mate
+        else:
+            game.turn = "black"
+            for item in posBlack:
+                piece, name = game.getPiece(item)
+                if "p" in name:
+                    posDir = piece.checkDir(kingCheck=True)
+                else:
+                    posDir = piece.posDir
+                for pos in posDir:
+                    opposentPos.append(pos)
+            game.turn = "white"
+            if self.pos in opposentPos:
+                return True
+            return False
 
 class Cheval:
     def __init__(self, pos):
@@ -360,7 +414,7 @@ class Cheval:
         elif i == 0 and j == 1:
             chevalDir = [(i+2, j+1), (i+1, j+2), (i+2, j-1)]
         elif i == 0 and j == 6:
-            chevalDir = [(i+2, j+1), (i-1, j+2), (i-2, j+1)]
+            chevalDir = [(i+2, j+1), (i+1, j-2), (i+2, j-1)]
         elif i == 7 and j == 1:
             chevalDir = [(i-2, j-1), (i-2, j+1), (i-1, j+2)]
         elif i == 7 and j == 6:
@@ -386,43 +440,81 @@ class Cheval:
 
 
         for item in chevalDir:
-                if game.board[item[0]][item[1]] == 0:
-                    posDir.append(item)
+            if game.board[item[0]][item[1]] == 0:
+                posDir.append(item)
+            else:
+                if game.turn == "black":
+                    if "w" in game.board[item[0]][item[1]]:
+                        posDir.append(item)
                 else:
-                    if game.turn == "black":
-                        if "w" in game.board[item[0]][item[1]]:
-                            posDir.append(item)
-                    else:
-                        if "b" in game.board[item[0]][item[1]]:
-                            posDir.append(item)
+                    if "b" in game.board[item[0]][item[1]]:
+                        posDir.append(item)
             
         return posDir
 
+
+def getKingsPos():
+    for i in range(COLUMNS):
+        for j in range(LINES):
+            if game.board[i][j] == "rb":
+                blackKingPos = (i, j)
+            elif game.board[i][j] == "rw":
+                whiteKingPos = (i, j)
+    return blackKingPos, whiteKingPos
+
 playing = True
+count = 0
+turns = ["white", "black"]
 
 while playing:
+    draw_game()
+    print("\n")
     print("C'est au {}".format(game.turn))
-    selectPiece = input("Quel piece prenez vous ?")
-    nextPos = input("Ou allez vous ?")
-    if game.makeMove(selectPiece, nextPos):
-        draw_game()
+    blackKingPos, whiteKingPos = getKingsPos()
+    if game.turn == "black":
+        roi = Roi(blackKingPos)
     else:
-        print("Ceci n'est pas une case valide..")
+        roi = Roi(whiteKingPos)
+    if roi.isMate():
+        print("Echec au roi")
+        print("Il faut bouger votre roi..")
+        selectPiece = input("Quel piece prenez vous ?")
+        formatPiece = tuple(map(int, selectPiece.split(',')))
+        piece, name = game.getPiece(formatPiece, True)
+        print(piece.posDir)
+        nextPos = input("Ou allez vous ?")
+        formatNext = tuple(map(int, nextPos.split(',')))
+        while not game.makeMove(formatPiece, formatNext, piece, name):
+            print("Ceci n'est pas une case valide..")
+            selectPiece = input("Quel piece prenez vous ?")
+            formatPiece = tuple(map(int, selectPiece.split(',')))
+            piece, name = game.getPiece(formatPiece)
+            print(piece.posDir)
+            nextPos = input("Ou allez vous ?")
+            formatNext = tuple(map(int, nextPos.split(',')))
+    else:
+        selectPiece = input("Quel piece prenez vous ?")
+        formatPiece = tuple(map(int, selectPiece.split(',')))
+        piece, name = game.getPiece(formatPiece)
+        print(piece.posDir)
+        if "p" in name and game.turn == "white" and formatPiece[0] == 0:
+            game.getNewPiece("w", formatPiece)
+        elif "p" in name and game.turn == "black" and formatPiece[0] == 7:
+            game.getNewPiece("b", formatPiece)    
+        else:
+            nextPos = input("Ou allez vous ?")
+            formatNext = tuple(map(int, nextPos.split(',')))
+            while not game.makeMove(formatPiece, formatNext, piece, name):
+                print("Ceci n'est pas une case valide..")
+                selectPiece = input("Quel piece prenez vous ?")
+                print(piece.posDir)
+                formatPiece = tuple(map(int, selectPiece.split(',')))
+                piece, name = game.getPiece(formatPiece)
+                nextPos = input("Ou allez vous ?")
+                formatNext = tuple(map(int, nextPos.split(',')))
+    if count == 0:
+        count = 1
+    else:
+        count = 0
+    game.turn = turns[count]
     
-# game.makeMove((6,4), (5,4))
-# pion = Pion((6, 3))
-# print(pion.posDir)
-# game.makeMove((6, 1), (5, 1))
-# print("\n")
-# game.makeMove((0, 0), (5, 3))
-# draw_game()
-# draw_game()
-# game.makeMove((7, 3), (6, 3))
-# draw_game()
-# tour = Tour((5, 3))
-# cheval = Cheval((3, 1))
-# print(cheval.posDir)
-# tour = Tour((7, 0))
-# draw_game()
-# print(tour.posDir)
-# print(game.posDir)
