@@ -1,13 +1,97 @@
 import gc
 
-from sklearn.feature_selection import SelectFpr
-
 COLUMNS = 8
 LINES = 8
 
+
+def getOpponentPiece():
+    wp = []
+    bp = []
+    for i in range(0, COLUMNS):
+        for j in range(0, LINES):
+            if game.board[i][j] != 0 and "w" in game.board[i][j]:
+                wp.append((i, j))
+            elif game.board[i][j] != 0 and "b" in game.board[i][j]:
+                bp.append((i, j))
+    return wp, bp
+
+def draw_game(board):
+    for i in range(COLUMNS):
+        for j in range(19):
+            if j == 0:
+                print("\n", "--", end="")
+            print("--", end="")
+        for j in range(LINES):
+            if j == 0:
+                print("\n", end="")
+            print("| ", end="")
+            if board[i][j] == 0:
+                print(" 0", end="")
+            else:
+                print(board[i][j], end="")
+            print(" ", end="")
+        print("|", end="")
+    print("\n")
+    print("Black: {}".format(game.pieceTaken["black"]))
+    print("White: {}".format(game.pieceTaken["white"]))
+    pass
+
+def getKingsPos():
+    for i in range(COLUMNS):
+        for j in range(LINES):
+            if game.board[i][j] == "rb":
+                blackKingPos = (i, j)
+            elif game.board[i][j] == "rw":
+                whiteKingPos = (i, j)
+    return blackKingPos, whiteKingPos
+
+def getPiecesPos(pw, pb):
+    opposentPos = []
+    ownPos = []
+    if game.turn == "black":
+        game.turn = "white"
+        for item in pw:
+            piece, name = game.getPiece(item)
+            if "p" in name:
+                posDir = piece.checkDir(kingCheck=True)
+            else:
+                posDir = piece.posDir
+            for pos in posDir:
+                opposentPos.append(pos)
+        for item in pb:
+            piece, name = game.getPiece(item)
+            if "p" in name:
+                posDir = piece.checkDir(kingCheck=True)
+            else:
+                posDir = piece.posDir
+            for pos in posDir:
+                ownPos.append(pos)
+        game.turn = "black"
+    else:
+        game.turn = "black"
+        for item in pb:
+            piece, name = game.getPiece(item)
+            if "p" in name:
+                posDir = piece.checkDir(kingCheck=True)
+            else:
+                posDir = piece.posDir
+            for pos in posDir:
+                opposentPos.append(pos)
+        for item in pw:
+            piece, name = game.getPiece(item)
+            if "p" in name:
+                posDir = piece.checkDir(kingCheck=True)
+            else:
+                posDir = piece.posDir
+            for pos in posDir:
+                ownPos.append(pos)
+        game.turn = "white"
+    return opposentPos, ownPos
+
+
 class Game(object):
     def __init__(self):        
-        self.board = [[0]*LINES for i in range(LINES)]
+        self.board = [[0]*LINES for _ in range(LINES)]
         self.initiate_board()
         self.turn = "white"
         self.pieceTaken = { "black": [], "white": [] }
@@ -52,14 +136,18 @@ class Game(object):
             piece = Cheval(piecePos)
         return piece, name
 
-    def makeMove(self, piecePos, nextPos, piece, name):
+    def makeMove(self, piecePos, nextPos, piece, name, roi_pos):
         if self.board[nextPos[0]][nextPos[1]] != 0 and "r" in name:
             return False
-        # print(piece.posDir)
-        # print(nextPos)
+        tempBoard = []
+        for i in range(COLUMNS):
+            li = []
+            for j in range(LINES):
+                li.append(self.board[i][j])
+            tempBoard.append(li)
         if nextPos in piece.posDir:
             temp = self.board[nextPos[0]][nextPos[1]]
-            if temp == 0 and "r" in name:
+            if self.board[piecePos[0]][piecePos[1]] != 0 and "r" in name:
                 if nextPos == (0, 6):
                     self.board[0][7] = 0
                     self.board[0][5] = "tb"
@@ -72,7 +160,6 @@ class Game(object):
                 elif nextPos == (7, 2):
                     self.board[7][0] = 0
                     self.board[7][3] = "tw"
-                self.board[nextPos[0]][nextPos[1]] = name
             elif temp != 0:
                 if "w" in name:
                     self.pieceTaken["white"].append(temp)
@@ -80,10 +167,13 @@ class Game(object):
                     self.pieceTaken["black"].append(temp)
             self.board[nextPos[0]][nextPos[1]] = name
             self.board[piecePos[0]][piecePos[1]] = 0
-            self.posDir
-            del piece
-            gc.collect()
-            return True
+            roi_piece = Roi(roi_pos)
+            if roi_piece.isMate(nextPos):
+                game.board = tempBoard
+                return False
+            else:
+                self.posDir
+                return True
         else:
             return False
         
@@ -99,26 +189,6 @@ class Game(object):
 
 game = Game()
 
-def draw_game():
-    for i in range(COLUMNS):
-        for j in range(19):
-            if j == 0:
-                print("\n", "--", end="")
-            print("--", end="")
-        for j in range(LINES):
-            if j == 0:
-                print("\n", end="")
-            print("| ", end="")
-            if game.board[i][j] == 0:
-                print(" 0", end="")
-            else:
-                print(game.board[i][j], end="")
-            print(" ", end="")
-        print("|", end="")
-    print("\n")
-    print("Black: {}".format(game.pieceTaken["black"]))
-    print("White: {}".format(game.pieceTaken["white"]))
-    pass
 
 class Pion():
     def __init__(self, pos):
@@ -132,7 +202,7 @@ class Pion():
         if game.turn == "white":
             if i > 0:
                 if not kingCheck:
-                    if i == 6 and game.board[i-2][j] == 0:
+                    if i == 6 and game.board[i-1][j] == 0 and game.board[i-2][j] == 0:
                         posDir.append((i-2, j))
                     if game.board[i-1][j] == 0:
                         posDir.append((i-1, j))
@@ -148,7 +218,7 @@ class Pion():
         else:
             if i < 7:
                 if not kingCheck:
-                    if i == 1 and game.board[i+2][j] == 0:
+                    if i == 1 and game.board[i+1][j] == 0 and game.board[i+2][j] == 0:
                         posDir.append((i+2, j))
                     if game.board[i+1][j] == 0:
                         posDir.append((i+1, j))
@@ -163,6 +233,7 @@ class Pion():
                         posDir.append((i+1, j-1))
         return posDir
 
+
 class Tour():
     def __init__(self, pos):
         self.pos = pos
@@ -176,42 +247,58 @@ class Tour():
             while (i < 7 and game.board[i+1][j] == 0) or (i < 7 and game.board[i+1][j] != 0 and "w" in game.board[i+1][j]):
                 i += 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
             while (i > 0 and game.board[i-1][j] == 0) or (i > 0 and game.board[i-1][j] != 0 and "w" in game.board[i-1][j]):
                 i -= 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
             while (j > 0 and game.board[i][j-1] == 0) or (j > 0 and game.board[i][j-1] != 0 and "w" in game.board[i][j-1]):
                 j -= 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
             while (j < 7 and game.board[i][j+1] == 0) or (j < 7 and game.board[i][j+1] != 0 and "w" in game.board[i][j+1]):
                 j += 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
         else:
             while (i < 7 and game.board[i+1][j] == 0) or (i < 7 and game.board[i+1][j] != 0 and "b" in game.board[i+1][j]):
                 i += 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
             while (i > 0 and game.board[i-1][j] == 0) or (i > 0 and game.board[i-1][j] != 0 and "b" in game.board[i-1][j]):
                 i -= 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
             while (j > 0 and game.board[i][j-1] == 0) or (j > 0 and game.board[i][j-1] != 0 and "b" in game.board[i][j-1]):
                 j -= 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
             i = self.pos[0]
             j = self.pos[1]
             while (j < 7 and game.board[i][j+1] == 0) or (j < 0 and game.board[i][j+1] != 0 and "b" in game.board[i][j+1]):
                 j += 1
                 posDir.append((i, j))
+                if game.board[i][j] != 0:
+                    break
         return posDir
 
 
@@ -290,6 +377,7 @@ class Fou:
                     break
         return posDir
 
+
 class Dame:
     def __init__(self, pos):
         self.pos = pos
@@ -308,10 +396,11 @@ class Dame:
         gc.collect()
         return posDir
 
+
 class Roi:
-    def __init__(self, pos, isMate):
+    def __init__(self, pos, kingMate=False):
         self.pos = pos
-        self.mate = isMate
+        self.mate = kingMate
         self.posDir = self.checkDir()
     
     def checkDir(self):
@@ -335,44 +424,18 @@ class Roi:
         gc.collect()
         return posDir
 
-    def isMate(self):
-        posWhite = []
-        posBlack = []
-        opposentPos = []
-        for i in range(0, COLUMNS):
-            for j in range(0, LINES):
-                if game.board[i][j] != 0 and "w" in game.board[i][j]:
-                    posWhite.append((i, j))
-                elif game.board[i][j] != 0 and "b" in game.board[i][j]:
-                    posBlack.append((i, j))
-        if game.turn == "black":
-            game.turn = "white"
-            for item in posWhite:
-                piece, name = game.getPiece(item)
-                if "p" in name:
-                    posDir = piece.checkDir(kingCheck=True)
-                else:
-                    posDir = piece.posDir
-                for pos in posDir:
-                    opposentPos.append(pos)
-            game.turn = "black"
-            if self.pos in opposentPos:
-                return self.mate
-            return self.mate
-        else:
-            game.turn = "black"
-            for item in posBlack:
-                piece, name = game.getPiece(item)
-                if "p" in name:
-                    posDir = piece.checkDir(kingCheck=True)
-                else:
-                    posDir = piece.posDir
-                for pos in posDir:
-                    opposentPos.append(pos)
-            game.turn = "white"
-            if self.pos in opposentPos:
-                return True
-            return False
+    def isMate(self, nextPos=()):
+        posWhite, posBlack = getOpponentPiece()
+        opposentPos, _ = getPiecesPos(posWhite, posBlack)
+        nextVal = False
+        if nextPos in opposentPos:
+            nextVal = True
+        if (self.pos in opposentPos) or nextVal:
+            self.mate = True
+            return True
+        return False
+
+
 
 class Cheval:
     def __init__(self, pos):
@@ -453,21 +516,12 @@ class Cheval:
         return posDir
 
 
-def getKingsPos():
-    for i in range(COLUMNS):
-        for j in range(LINES):
-            if game.board[i][j] == "rb":
-                blackKingPos = (i, j)
-            elif game.board[i][j] == "rw":
-                whiteKingPos = (i, j)
-    return blackKingPos, whiteKingPos
-
 playing = True
 count = 0
 turns = ["white", "black"]
 
 while playing:
-    draw_game()
+    draw_game(game.board)
     print("\n")
     print("C'est au {}".format(game.turn))
     blackKingPos, whiteKingPos = getKingsPos()
@@ -475,17 +529,29 @@ while playing:
         roi = Roi(blackKingPos)
     else:
         roi = Roi(whiteKingPos)
+    nameRoi = game.board[roi.pos[0]][roi.pos[1]]
     if roi.isMate():
+        # if roi.posDir == []:
+        #     posWhite, posBlack = getOpponentPiece()
+        #     opposentPos, ownPos = getPiecesPos(posWhite, posBlack)
+        #     checkMate = any(pos in ownPos for pos in opposentPos)
+        #     print(ownPos)
+        #     print(opposentPos)
+        #     print(checkMate)
+        #     if not checkMate:
+        #         print("CheckMate!!")
+
         print("Echec au roi")
-        print("Il faut bouger votre roi..")
         selectPiece = input("Quel piece prenez vous ?")
         formatPiece = tuple(map(int, selectPiece.split(',')))
         piece, name = game.getPiece(formatPiece, True)
         print(piece.posDir)
         nextPos = input("Ou allez vous ?")
         formatNext = tuple(map(int, nextPos.split(',')))
-        while not game.makeMove(formatPiece, formatNext, piece, name):
-            print("Ceci n'est pas une case valide..")
+        if roi.pos == piece.pos:
+            roi = piece
+        while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos):
+            print("Ceci n'est pas une case valide ou vous êtes toujours en echec..")
             selectPiece = input("Quel piece prenez vous ?")
             formatPiece = tuple(map(int, selectPiece.split(',')))
             piece, name = game.getPiece(formatPiece)
@@ -504,12 +570,12 @@ while playing:
         else:
             nextPos = input("Ou allez vous ?")
             formatNext = tuple(map(int, nextPos.split(',')))
-            while not game.makeMove(formatPiece, formatNext, piece, name):
+            while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos):
                 print("Ceci n'est pas une case valide..")
                 selectPiece = input("Quel piece prenez vous ?")
-                print(piece.posDir)
                 formatPiece = tuple(map(int, selectPiece.split(',')))
                 piece, name = game.getPiece(formatPiece)
+                print(piece.posDir)
                 nextPos = input("Ou allez vous ?")
                 formatNext = tuple(map(int, nextPos.split(',')))
     if count == 0:
