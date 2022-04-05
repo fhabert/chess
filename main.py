@@ -3,7 +3,6 @@ import gc
 COLUMNS = 8
 LINES = 8
 
-
 def getOpponentPiece():
     wp = []
     bp = []
@@ -45,7 +44,7 @@ def getKingsPos():
                 whiteKingPos = (i, j)
     return blackKingPos, whiteKingPos
 
-def getPiecesPos(pw, pb):
+def getPiecesPos(pw, pb, check=True):
     opposentPos = []
     ownPos = []
     if game.turn == "black":
@@ -53,41 +52,41 @@ def getPiecesPos(pw, pb):
         for item in pw:
             piece, name = game.getPiece(item)
             if "p" in name:
-                posDir = piece.checkDir(kingCheck=True)
+                posDir = piece.checkDir(kingCheck=check)
             else:
                 posDir = piece.posDir
             for pos in posDir:
-                opposentPos.append(pos)
+                opposentPos.append([name, item, pos])
+        game.turn = "black"
         for item in pb:
             piece, name = game.getPiece(item)
             if "p" in name:
-                posDir = piece.checkDir(kingCheck=True)
+                posDir = piece.checkDir(kingCheck=check)
             else:
                 posDir = piece.posDir
             for pos in posDir:
-                ownPos.append(pos)
-        game.turn = "black"
+                ownPos.append([name, item, pos])
     else:
         game.turn = "black"
         for item in pb:
             piece, name = game.getPiece(item)
             if "p" in name:
-                posDir = piece.checkDir(kingCheck=True)
+                posDir = piece.checkDir(kingCheck=check)
             else:
                 posDir = piece.posDir
             for pos in posDir:
-                opposentPos.append(pos)
+                opposentPos.append([name, item, pos])
+        game.turn = "white"
         for item in pw:
             piece, name = game.getPiece(item)
             if "p" in name:
-                posDir = piece.checkDir(kingCheck=True)
+                posDir = piece.checkDir(kingCheck=check )
             else:
                 posDir = piece.posDir
             for pos in posDir:
-                ownPos.append(pos)
-        game.turn = "white"
+                ownPos.append([name, item, pos])
     return opposentPos, ownPos
-
+    
 
 class Game(object):
     def __init__(self):        
@@ -96,6 +95,7 @@ class Game(object):
         self.turn = "white"
         self.pieceTaken = { "black": [], "white": [] }
         self.posDir = self.checkDir()
+        self.playing = True
         pass
 
     def checkDir(self):
@@ -136,15 +136,10 @@ class Game(object):
             piece = Cheval(piecePos)
         return piece, name
 
-    def makeMove(self, piecePos, nextPos, piece, name, roi_pos):
+    def makeMove(self, piecePos, nextPos, piece, name, piece_pos):
         if self.board[nextPos[0]][nextPos[1]] != 0 and "r" in name:
             return False
-        tempBoard = []
-        for i in range(COLUMNS):
-            li = []
-            for j in range(LINES):
-                li.append(self.board[i][j])
-            tempBoard.append(li)
+        temporary = [[game.board[i][j] for i in range(COLUMNS)] for j in range(LINES)]
         if nextPos in piece.posDir:
             temp = self.board[nextPos[0]][nextPos[1]]
             if self.board[piecePos[0]][piecePos[1]] != 0 and "r" in name:
@@ -165,14 +160,20 @@ class Game(object):
                     self.pieceTaken["white"].append(temp)
                 else:
                     self.pieceTaken["black"].append(temp)
+            if "p" in name and self.turn == "white" and formatPiece[0] == 0:
+                name = self.getNewPiece("w", formatPiece)
+            elif "p" in name and self.turn == "black" and formatPiece[0] == 7:
+                name = self.getNewPiece("b", formatPiece)
             self.board[nextPos[0]][nextPos[1]] = name
             self.board[piecePos[0]][piecePos[1]] = 0
-            roi_piece = Roi(roi_pos)
-            if roi_piece.isMate(nextPos):
-                game.board = tempBoard
+            roi_piece = Roi(piece_pos)
+            if "r" in name:
+                roi_piece.pos = nextPos
+            if roi_piece.isMate():
+                print("can't play this move.. You are mate")
+                game.board = temporary
                 return False
             else:
-                self.posDir
                 return True
         else:
             return False
@@ -182,9 +183,7 @@ class Game(object):
         print(pieces)
         pieceSelect = input("Quelle piece choisissez-vous ?")
         name = f"{pieceSelect}{color}"
-        self.board[pos[0]][pos[1]] = name
-        self.posDir
-        pass
+        return name
         
 
 game = Game()
@@ -401,6 +400,7 @@ class Roi:
     def __init__(self, pos, kingMate=False):
         self.pos = pos
         self.mate = kingMate
+        self.checkMate = False
         self.posDir = self.checkDir()
     
     def checkDir(self):
@@ -424,18 +424,59 @@ class Roi:
         gc.collect()
         return posDir
 
-    def isMate(self, nextPos=()):
+    def isMate(self):
         posWhite, posBlack = getOpponentPiece()
-        opposentPos, _ = getPiecesPos(posWhite, posBlack)
-        nextVal = False
-        if nextPos in opposentPos:
-            nextVal = True
-        if (self.pos in opposentPos) or nextVal:
+        oppoPos, ownPos = getPiecesPos(posWhite, posBlack, False)
+        opposentPos = [item[2] for item in oppoPos]
+        opposentFiltered = list(dict.fromkeys(opposentPos))
+        if (self.pos in opposentFiltered):
+            print("echec au roi")
+            for item in opposentFiltered:
+                if item in self.posDir:
+                    self.posDir.remove(item)
+            tempo = [[game.board[i][j] for i in range(COLUMNS)] for j in range(LINES)]
+            for item in self.posDir:
+                game.board[self.pos[0]][self.pos[1]] = 0
+                if game.turn == "black":
+                    game.board[item[0]][item[1]] = "rb"
+                else:
+                    game.board[item[0]][item[1]] = "rw"
+                temp = self.pos
+                self.pos = (item[0], item[1])
+                posWhite, posBlack = getOpponentPiece()
+                oppoPos, _ = getPiecesPos(posWhite, posBlack, False)
+                opposentPos = [item[2] for item in oppoPos]
+                opposentFiltered = list(dict.fromkeys(opposentPos))
+                if (self.pos in opposentFiltered):
+                    self.posDir.remove((item[0], item[1]))
+                self.pos = temp
+                game.board = [[tempo[i][j] for i in range(COLUMNS)] for j in range(LINES)]
+            if len(self.posDir) == 0:
+                print("no possible pos..")
+                self.posDir = []
+                tempo = [[game.board[i][j] for i in range(COLUMNS)] for j in range(LINES)]
+                for item in ownPos:
+                    nextPosition = item[2]
+                    game.board[item[1][0]][item[1][1]] = 0
+                    game.board[nextPosition[0]][nextPosition[1]] = item[0]
+                    posWhite, posBlack = getOpponentPiece()
+                    oppoPos, _ = getPiecesPos(posWhite, posBlack, False)
+                    opposentPos = [item[2] for item in oppoPos]
+                    opposentFiltered = list(dict.fromkeys(opposentPos))
+                    if item in opposentFiltered:
+                        game.board = tempo
+                        self.checkMate = False
+                        return False
+                    game.board = [[tempo[i][j] for i in range(COLUMNS)] for j in range(LINES)]
+                self.checkMate = True
+                return True
             self.mate = True
+            self.checkMate = False
             return True
+        self.checkMate = False
+        self.mate = False
         return False
-
-
+    
 
 class Cheval:
     def __init__(self, pos):
@@ -516,11 +557,10 @@ class Cheval:
         return posDir
 
 
-playing = True
 count = 0
 turns = ["white", "black"]
 
-while playing:
+while game.playing:
     draw_game(game.board)
     print("\n")
     print("C'est au {}".format(game.turn))
@@ -529,58 +569,31 @@ while playing:
         roi = Roi(blackKingPos)
     else:
         roi = Roi(whiteKingPos)
-    nameRoi = game.board[roi.pos[0]][roi.pos[1]]
     if roi.isMate():
-        # if roi.posDir == []:
-        #     posWhite, posBlack = getOpponentPiece()
-        #     opposentPos, ownPos = getPiecesPos(posWhite, posBlack)
-        #     checkMate = any(pos in ownPos for pos in opposentPos)
-        #     print(ownPos)
-        #     print(opposentPos)
-        #     print(checkMate)
-        #     if not checkMate:
-        #         print("CheckMate!!")
-
-        print("Echec au roi")
-        selectPiece = input("Quel piece prenez vous ?")
-        formatPiece = tuple(map(int, selectPiece.split(',')))
+        if roi.checkMate:
+            print("checkmate..")
+            game.playing = False
+            break
+    selectPiece = input("Quel piece prenez vous ?")
+    formatPiece = tuple(map(int, selectPiece.split(',')))
+    if roi.mate:
         piece, name = game.getPiece(formatPiece, True)
-        print(piece.posDir)
-        nextPos = input("Ou allez vous ?")
-        formatNext = tuple(map(int, nextPos.split(',')))
-        if roi.pos == piece.pos:
-            roi = piece
-        while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos):
-            print("Ceci n'est pas une case valide ou vous êtes toujours en echec..")
-            selectPiece = input("Quel piece prenez vous ?")
-            formatPiece = tuple(map(int, selectPiece.split(',')))
-            piece, name = game.getPiece(formatPiece)
-            print(piece.posDir)
-            nextPos = input("Ou allez vous ?")
-            formatNext = tuple(map(int, nextPos.split(',')))
     else:
+        piece, name = game.getPiece(formatPiece)
+    print(piece.posDir)
+    nextPos = input("Ou allez vous ?")
+    formatNext = tuple(map(int, nextPos.split(',')))
+    if roi.pos == piece.pos:
+        roi = piece
+    while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos) and game.playing:
         selectPiece = input("Quel piece prenez vous ?")
         formatPiece = tuple(map(int, selectPiece.split(',')))
         piece, name = game.getPiece(formatPiece)
         print(piece.posDir)
-        if "p" in name and game.turn == "white" and formatPiece[0] == 0:
-            game.getNewPiece("w", formatPiece)
-        elif "p" in name and game.turn == "black" and formatPiece[0] == 7:
-            game.getNewPiece("b", formatPiece)    
-        else:
-            nextPos = input("Ou allez vous ?")
-            formatNext = tuple(map(int, nextPos.split(',')))
-            while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos):
-                print("Ceci n'est pas une case valide..")
-                selectPiece = input("Quel piece prenez vous ?")
-                formatPiece = tuple(map(int, selectPiece.split(',')))
-                piece, name = game.getPiece(formatPiece)
-                print(piece.posDir)
-                nextPos = input("Ou allez vous ?")
-                formatNext = tuple(map(int, nextPos.split(',')))
+        nextPos = input("Ou allez vous ?")
+        formatNext = tuple(map(int, nextPos.split(',')))
     if count == 0:
         count = 1
     else:
         count = 0
     game.turn = turns[count]
-    
