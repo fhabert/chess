@@ -160,10 +160,10 @@ class Game(object):
                     self.pieceTaken["white"].append(temp)
                 else:
                     self.pieceTaken["black"].append(temp)
-            if "p" in name and self.turn == "white" and formatPiece[0] == 0:
-                name = self.getNewPiece("w", formatPiece)
-            elif "p" in name and self.turn == "black" and formatPiece[0] == 7:
-                name = self.getNewPiece("b", formatPiece)
+            if "p" in name and self.turn == "white" and nextPos[0] == 0:
+                name = self.getNewPiece("w")
+            elif "p" in name and self.turn == "black" and nextPos[0] == 7:
+                name = self.getNewPiece("b")
             self.board[nextPos[0]][nextPos[1]] = name
             self.board[piecePos[0]][piecePos[1]] = 0
             roi_piece = Roi(piece_pos)
@@ -178,7 +178,7 @@ class Game(object):
         else:
             return False
         
-    def getNewPiece(self, color, pos):
+    def getNewPiece(self, color):
         pieces = ["t", "c", "f", "d"]
         print(pieces)
         pieceSelect = input("Quelle piece choisissez-vous ?")
@@ -560,40 +560,40 @@ class Cheval:
 count = 0
 turns = ["white", "black"]
 
-while game.playing:
-    draw_game(game.board)
-    print("\n")
-    print("C'est au {}".format(game.turn))
-    blackKingPos, whiteKingPos = getKingsPos()
-    if game.turn == "black":
-        roi = Roi(blackKingPos)
-    else:
-        roi = Roi(whiteKingPos)
-    if roi.isMate():
-        if roi.checkMate:
-            print("checkmate..")
-            game.playing = False
-            break
-    selectPiece = input("Quel piece prenez vous ?")
-    formatPiece = tuple(map(int, selectPiece.split(',')))
-    if roi.mate:
-        piece, name = game.getPiece(formatPiece, True)
-    else:
-        piece, name = game.getPiece(formatPiece)
-    print(piece.posDir)
-    nextPos = input("Ou allez vous ?")
-    formatNext = tuple(map(int, nextPos.split(',')))
-    if roi.pos == piece.pos:
-        roi = piece
-    while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos) and game.playing:
-        selectPiece = input("Quel piece prenez vous ?")
-        formatPiece = tuple(map(int, selectPiece.split(',')))
-        piece, name = game.getPiece(formatPiece)
-        print(piece.posDir)
-        nextPos = input("Ou allez vous ?")
-        formatNext = tuple(map(int, nextPos.split(',')))
-    if count == 0:
-        count = 1
-    else:
-        count = 0
-    game.turn = turns[count]
+# while game.playing:
+#     draw_game(game.board)
+#     print("\n")
+#     print("C'est au {}".format(game.turn))
+#     blackKingPos, whiteKingPos = getKingsPos()
+#     if game.turn == "black":
+#         roi = Roi(blackKingPos)
+#     else:
+#         roi = Roi(whiteKingPos)
+#     if roi.isMate():
+#         if roi.checkMate:
+#             print("checkmate..")
+#             game.playing = False
+#             break
+#     selectPiece = input("Quel piece prenez vous ?")
+#     formatPiece = tuple(map(int, selectPiece.split(',')))
+#     if roi.mate:
+#         piece, name = game.getPiece(formatPiece, True)
+#     else:
+#         piece, name = game.getPiece(formatPiece)
+#     print(piece.posDir)
+#     nextPos = input("Ou allez vous ?")
+#     formatNext = tuple(map(int, nextPos.split(',')))
+#     if roi.pos == piece.pos:
+#         roi = piece
+#     while not game.makeMove(formatPiece, formatNext, piece, name, roi.pos) and game.playing:
+#         selectPiece = input("Quel piece prenez vous ?")
+#         formatPiece = tuple(map(int, selectPiece.split(',')))
+#         piece, name = game.getPiece(formatPiece)
+#         print(piece.posDir)
+#         nextPos = input("Ou allez vous ?")
+#         formatNext = tuple(map(int, nextPos.split(',')))
+#     if count == 0:
+#         count = 1
+#     else:
+#         count = 0
+#     game.turn = turns[count]
