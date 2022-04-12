@@ -2,7 +2,24 @@
     text-align: center;
     font-weight: bold;
     font-size: 40px;
-    margin-top: 50px;
+    margin-top: 40px;
+}
+#turn_title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 30px;
+    margin-top: 20px;
+    opacity: 0.6;
+}
+.select_square {
+    background-color: rgb(153, 150, 145);
+    width: 110px;
+    height: 110px;
+}
+.yellow_posDir {
+    background-color: rgb(255, 255, 141);
+    width: 110px;
+    height: 110px;
 }
 .center-board {
   display: flex;

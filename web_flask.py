@@ -12,35 +12,46 @@ def home():
 
 @app.route('/api/v1/board', methods=['GET'])
 def api_all():
-    return jsonify(main.game.board)
+    info = { "board": main.game.board, "turn": main.turns[main.count]}
+    return jsonify(info)
 
 @app.route("/api/v1/board/update", defaults='', methods=['GET', 'POST'])
 def api_post():
-    posString = str(request.args.get('position'))
-    nextString = str(request.args.get('nextPos'))
-    formPos = tuple(map(int, posString.split(',')))
-    formNext = tuple(map(int, nextString.split(',')))
-    blackKingPos, whiteKingPos = main.getKingsPos()
-    if main.game.turn == "black":
-        roi = main.Roi(blackKingPos)
-    else:
-        roi = main.Roi(whiteKingPos)
-    if roi.mate:
-        piece, name = main.game.getPiece(formPos, True)
-    else:
-        piece, name = main.game.getPiece(formPos)
-    if roi.isMate():
-        if roi.checkMate:
-            print("checkmate..")
-            main.game.playing = False
-    if main.game.playing:
-        if main.game.makeMove(formPos, formNext, piece, name, roi.pos):
-            if main.count == 0:
-                main.count = 1
+    if request.args.get('position'):
+        posString = str(request.args.get('position'))
+        formPos = tuple(map(int, posString.split(',')))
+        if request.args.get('nextPos'):
+            nextString = str(request.args.get('nextPos'))
+            formNext = tuple(map(int, nextString.split(',')))
+        blackKingPos, whiteKingPos = main.getKingsPos()
+        if main.game.turn == "black":
+            roi = main.Roi(blackKingPos)
+        else:
+            roi = main.Roi(whiteKingPos)
+        if roi.mate:
+            piece, name = main.game.getPiece(formPos, True)
+        else:
+            piece, name = main.game.getPiece(formPos)
+        if roi.isMate():
+            if roi.checkMate:
+                print("checkmate..")
+                main.game.playing = False
+        if main.game.playing:
+            if request.args.get('nextPos'):
+                if main.game.makeMove(formPos, formNext, piece, name, roi.pos):
+                    if main.count == 0:
+                        main.count = 1
+                    else:
+                        main.count = 0
+                    main.game.turn = main.turns[main.count]
+                    game = { "board": main.game.board }
             else:
-                main.count = 0
-            main.game.turn = main.turns[main.count]
-    return jsonify(main.game.board)
+                game = { "board": main.game.board, "posDir": piece.posDir }
+        else:
+            game = { "game": "over" } 
+    else:
+        game = main.game.board
+    return jsonify(game)
 
 if __name__ == '__main__':
     app.run(debug=True)
