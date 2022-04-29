@@ -468,6 +468,7 @@ class Roi:
                         self.checkMate = False
                         return False
                     game.board = [[tempo[i][j] for i in range(COLUMNS)] for j in range(LINES)]
+                print("echec et mat")
                 self.checkMate = True
                 return True
             self.mate = True

@@ -4,6 +4,12 @@
     font-size: 40px;
     margin-top: 40px;
 }
+.sub-title {
+    text-align: center;
+    font-weight: bold;
+    font-size: 30px;
+    margin-top: 20px;
+}
 #turn_title {
     text-align: center;
     font-weight: bold;

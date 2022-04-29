@@ -1,8 +1,10 @@
 const board = document.querySelector(".board");
-let posPiece = "";
-let nextPos = "";
+const center = document.querySelector(".sub-title");
 let eatPiece = 0;
 let turn;
+let pos_color;
+let posPiece = "";
+let nextPos = "";
 
 const differentArray = (array1, array2) => {
     for (let i = 0; i < array1.length; i++) {
@@ -16,15 +18,51 @@ const differentArray = (array1, array2) => {
 }
   
 if (board) {
-    const executeGame = () => {
+    const executeGame = async () => {
+        const fetchResponse = await fetch(`/api/v1/board`);
+        const data = await fetchResponse.json();
+        turn = data["turn"];
+        posPiece = "";
+        nextPos = "";
+        if (data["checkmate"] == "true") {
+            center.innerHTML = `<h3 class="sub-title">${turn} are checkmate!</h3>`;
+        } else if (data["check"] == "true") {
+            center.innerHTML = `<h3 class="sub-title">${turn} are check!</h3>`;
+        } else {
+            center.innerHTML = "";
+        }
         const lines = board.children;
         for (let line of lines) {
             const squares = line.children;
             for (let square of squares) {
                 square.addEventListener("click", async (e) => {
                     e.preventDefault();
-                    const posHTML = square.id.slice(8,12);
+                    const posHTML = e.currentTarget.id.slice(8,12);
                     if (e.currentTarget.children.length > 0) {
+                        const innerLines = board.children;
+                        for (let inLine of innerLines) {
+                            const innerSquares = inLine.children;
+                            for (let innerSquare of innerSquares) {
+                                const innerPosHTML = innerSquare.id.slice(8,12);
+                                let leftNum = Number.parseInt(innerPosHTML[0], 10);
+                                let rightNum = Number.parseInt(innerPosHTML[3], 10);
+                                let idNum = leftNum + rightNum;
+                                if (innerSquare.classList.contains("select_square") & idNum % 2 == 1) {
+                                    innerSquare.classList.remove("select_square");
+                                    innerSquare.classList.add("green_square");
+                                } else if (innerSquare.classList.contains("select_square") & idNum % 2 == 0) {
+                                    innerSquare.classList.remove("select_square");
+                                    innerSquare.classList.add("beige_square");
+                                }
+                                if (innerSquare.classList.contains("yellow_posDir") & idNum % 2 == 1) {
+                                    innerSquare.classList.remove("yellow_posDir");
+                                    innerSquare.classList.add("green_square");
+                                } else if (innerSquare.classList.contains("yellow_posDir") & idNum % 2 == 0) {
+                                    innerSquare.classList.remove("yellow_posDir");
+                                    innerSquare.classList.add("beige_square");
+                                }
+                            }
+                        }
                         if (e.currentTarget.classList.contains('beige_square')) {
                             e.currentTarget.classList.remove("beige_square");
                             e.currentTarget.classList.add("select_square");
@@ -33,66 +71,64 @@ if (board) {
                             e.currentTarget.classList.add("select_square");
                         }
                     }
-                    if (square.children.length > 0 & eatPiece == 0) { 
-                        posPiece = posHTML.replace(/\s/g, '');
-                        eatPiece = 1; 
-                    } else if (square.children.length > 0 & eatPiece == 1) { 
-                        nextPos = posHTML.replace(/\s/g, '');
-                        eatPiece = 0;
-                    } else {
+                    if (e.currentTarget.children.length > 0) {
+                        let pos_id = e.currentTarget.children[0].src;
+                        pos_color = pos_id[37];
+                        if (pos_color === turn[0]) {
+                            posPiece = posHTML.replace(/\s/g, '');
+                        } else if (pos_color !== turn[0]) { 
+                            nextPos = posHTML.replace(/\s/g, '');
+                        } 
+                    } else if (square.children.length === 0 & posPiece !== "") {
                         nextPos = posHTML.replace(/\s/g, '');
                     }
-                    console.log(posPiece);
                     const headers = {
                         method:"POST",
                         headers: {
                             "Content-type": "application/json; charset=UTF-8"
                         }
                     };
-                    const fetchResponse = await fetch(`/api/v1/board/update?position=${posPiece}`, headers);
-                    const data = await fetchResponse.json();
-                    console.log(data);
-                    const possibleDir = [];
-                    if (data["posDir"] !== undefined) {
-                        for(let item of data["posDir"]) {
-                            let squareString = "square_(";
-                            squareString += String(item[0]);
-                            squareString += ", ";
-                            squareString += String(item[1]);
-                            squareString += ")";
-                            possibleDir.push(squareString);
-                        }
-                        for (let name of possibleDir) {
-                            const element = document.getElementById(name);
-                            if (element.classList.contains('beige_square')) {
-                                element.classList.remove("beige_square");
-                                element.classList.add("yellow_posDir");
-                            } else if (element.classList.contains('green_square')) {
-                                element.classList.remove("green_square");
-                                element.classList.add("yellow_posDir");
+                    if (nextPos === "") {
+                        const fetchResponse = await fetch(`/api/v1/board/update?position=${posPiece}`, headers);
+                        const data = await fetchResponse.json();
+                        const possibleDir = [];
+                        if (data["posDir"] !== undefined) {
+                            for(let item of data["posDir"]) {
+                                let squareString = "square_(";
+                                squareString += String(item[0]);
+                                squareString += ", ";
+                                squareString += String(item[1]);
+                                squareString += ")";
+                                possibleDir.push(squareString);
+                            }
+                            for (let name of possibleDir) {
+                                const element = document.getElementById(name);
+                                if (element.classList.contains('beige_square')) {
+                                    element.classList.remove("beige_square");
+                                    element.classList.add("yellow_posDir");
+                                } else if (element.classList.contains('green_square')) {
+                                    element.classList.remove("green_square");
+                                    element.classList.add("yellow_posDir");
+                                }
                             }
                         }
-                    };
-                    console.log(possibleDir);
+                    }
                     if (posPiece !== "" & nextPos !== "") {
                         const init_board = await fetch('/api/v1/board/update');
                         const init_info = await init_board.text();
                         const init_json = JSON.parse(init_info);
-                        fetch(`/api/v1/board/update?position=${posPiece}&nextPos=${nextPos}`, {
-                            method:"POST",
-                            headers: {
-                                "Content-type": "application/json; charset=UTF-8"
-                            }
-                        });
+                        fetch(`/api/v1/board/update?position=${posPiece}&nextPos=${nextPos}`, headers);
                         const update_board = await fetch('/api/v1/board/update');
                         const update_info = await update_board.text();
                         const updated_json = JSON.parse(update_info);
                         let html = "";
-                        const info = await fetch('/api/v1/board');
-                        const info_text = await info.text();
-                        const info_json = JSON.parse(info_text);
-                        turn = info_json["turn"];
-                        if (differentArray(updated_json, init_json)) {
+                        const updated_json_board = updated_json["board"];
+                        const init_json_board = init_json["board"];
+                        const turnData = await fetch('/api/v1/board/update');
+                        const turnData_info = await turnData.text();
+                        const turnData_json = JSON.parse(turnData_info);
+                        turn = turnData_json["turn"]
+                        if (differentArray(updated_json_board, init_json_board)) {
                             board.innerHTML = "";
                             if (turn == "white") {
                                 for (let i = 0; i < 8; i++) {
@@ -101,16 +137,16 @@ if (board) {
                                         const position = `(${i}, ${j})`;
                                         if ((i + j) % 2 == 0) {
                                             html += `<div id='square_${position}' class="squares beige_square">`;
-                                            if (updated_json[i][j] != 0) {
-                                                html += `<img src="../static/images/${updated_json[i][j]}.png" id="img_${position}" \
-                                                width="70px" height="80px" alt="img_${updated_json[i][j]}"/>`;
+                                            if (updated_json_board[i][j] != 0) {
+                                                html += `<img src="../static/images/${updated_json_board[i][j]}.png" id="img_${position}" \
+                                                width="70px" height="80px" alt="img_${updated_json_board[i][j]}"/>`;
                                             }
                                             html += "</div>";
                                         } else {
                                             html += `<div id='square_${position}' class="squares green_square">`;
-                                            if(updated_json[i][j] != 0) {
-                                                html += `<img src="../static/images/${updated_json[i][j]}.png" id="img_${position}"\
-                                                 width="70px" height="80px" alt="img_${updated_json[i][j]}"/>`;
+                                            if(updated_json_board[i][j] != 0) {
+                                                html += `<img src="../static/images/${updated_json_board[i][j]}.png" id="img_${position}"\
+                                                width="70px" height="80px" alt="img_${updated_json_board[i][j]}"/>`;
                                             }
                                             html += "</div>";
                                         }
@@ -124,16 +160,16 @@ if (board) {
                                         const position = `(${i}, ${j})`;
                                         if ((i + j) % 2 == 0) {
                                             html += `<div id='square_${position}' class="squares beige_square">`;
-                                            if (updated_json[i][j] != 0) {
-                                                html += `<img src="../static/images/${updated_json[i][j]}.png" id="img_${position}" \
-                                                width="70px" height="80px" alt="img_${updated_json[i][j]}"/>`;
+                                            if (updated_json_board[i][j] != 0) {
+                                                html += `<img src="../static/images/${updated_json_board[i][j]}.png" id="img_${position}" \
+                                                width="70px" height="80px" alt="img_${updated_json_board[i][j]}"/>`;
                                             }
                                             html += "</div>";
                                         } else {
                                             html += `<div id='square_${position}' class="squares green_square">`;
-                                            if(updated_json[i][j] != 0) {
-                                                html += `<img src="../static/images/${updated_json[i][j]}.png" id="img_${position}"\
-                                                 width="70px" height="80px" alt="img_${updated_json[i][j]}"/>`;
+                                            if(updated_json_board[i][j] != 0) {
+                                                html += `<img src="../static/images/${updated_json_board[i][j]}.png" id="img_${position}"\
+                                                 width="70px" height="80px" alt="img_${updated_json_board[i][j]}"/>`;
                                             }
                                             html += "</div>";
                                         }
@@ -143,9 +179,6 @@ if (board) {
                             }
                             board.insertAdjacentHTML("beforeend", html);
                         }
-                        posPiece = "";
-                        nextPos = "";
-                        eatPiece = 0;
                         executeGame();
                     }
                 })

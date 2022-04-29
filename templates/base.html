@@ -21,27 +21,50 @@
             </div>
           </nav>
         <h1 class="title-page"> Chess game </h1>
+        <h3 class="sub-title"></h3>
         <div class="center-board">
           <div class="board">
-            {% for i in range(8) %}
-              <div class="line_squares">
-                {% for j in range(8) %}
-                  {% if (i + j) % 2 == 0 %}
-                    <div id='square_{{(i, j)}}' class="squares beige_square">
-                      {% if board[i][j] != 0 %}
-                        <img src="../static/images/{{board[i][j]}}.png" id="img_{{(i,j)}}" width="70px" height="80px" alt="{{board[i][j]}}"/>
-                      {% endif %}
-                    </div>
-                  {% else %}
-                    <div id='square_{{(i,j)}}' class="squares green_square">
-                      {% if board[i][j] != 0 %}
-                        <img src="../static/images/{{board[i][j]}}.png" id="img_{{(i,j)}}" width="70px" height="80px" alt="{{board[i][j]}}"/>
-                      {% endif %}
-                    </div>
-                  {% endif %}
-                {% endfor %}
-              </div>
-            {% endfor %}
+            {% if turn == "white" %}
+              {% for i in range(8) %}
+                <div class="line_squares">
+                  {% for j in range(8) %}
+                    {% if (i + j) % 2 == 0 %}
+                      <div id='square_{{(i, j)}}' class="squares beige_square">
+                        {% if board[i][j] != 0 %}
+                          <img src="../static/images/{{board[i][j]}}.png" id="img_{{(i,j)}}" width="70px" height="80px" alt="{{board[i][j]}}"/>
+                        {% endif %}
+                      </div>
+                    {% else %}
+                      <div id='square_{{(i,j)}}' class="squares green_square">
+                        {% if board[i][j] != 0 %}
+                          <img src="../static/images/{{board[i][j]}}.png" id="img_{{(i,j)}}" width="70px" height="80px" alt="{{board[i][j]}}"/>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            {% else %}
+              {% for i in range(7, -1, -1) %}
+                <div class="line_squares">
+                  {% for j in range(7, -1, -1) %}
+                    {% if (i + j) % 2 == 0 %}
+                      <div id='square_{{(i, j)}}' class="squares beige_square">
+                        {% if board[i][j] != 0 %}
+                          <img src="../static/images/{{board[i][j]}}.png" id="img_{{(i,j)}}" width="70px" height="80px" alt="{{board[i][j]}}"/>
+                        {% endif %}
+                      </div>
+                    {% else %}
+                      <div id='square_{{(i,j)}}' class="squares green_square">
+                        {% if board[i][j] != 0 %}
+                          <img src="../static/images/{{board[i][j]}}.png" id="img_{{(i,j)}}" width="70px" height="80px" alt="{{board[i][j]}}"/>
+                        {% endif %}
+                      </div>
+                    {% endif %}
+                  {% endfor %}
+                </div>
+              {% endfor %}
+            {% endif %}
           </div>
         </div>
         <script src="../static/base.js" type="text/javascript"></script>
