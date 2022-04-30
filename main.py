@@ -139,7 +139,7 @@ class Game(object):
     def makeMove(self, piecePos, nextPos, piece, name, piece_pos):
         if self.board[nextPos[0]][nextPos[1]] != 0 and "r" in name:
             return False
-        temporary = [[game.board[i][j] for i in range(COLUMNS)] for j in range(LINES)]
+        temporary = [[game.board[j][i] for i in range(COLUMNS)] for j in range(LINES)]
         if nextPos in piece.posDir:
             temp = self.board[nextPos[0]][nextPos[1]]
             if self.board[piecePos[0]][piecePos[1]] != 0 and "r" in name:

@@ -1,4 +1,4 @@
-from flask import Flask, redirect, url_for, render_template, request, session, jsonify, make_response
+from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import main
 import requests
@@ -32,6 +32,7 @@ def api_all():
             game = { "board": main.game.board, "turn": main.game.turn, "check": "true", "checkmate": "true" }
         else:
             game = { "board": main.game.board, "turn": main.game.turn, "check": "true", "checkmate": "false" }
+        return jsonify(game)
     else:
         game = { "board": main.game.board, "turn": main.game.turn, "check": "false", "checkmate": "false" }
     return jsonify(game)
@@ -62,13 +63,14 @@ def api_post():
                     else:
                         main.count = 0
                     main.game.turn = main.turns[main.count]
-                    game = { "board": main.game.board, "turn": main.game.turn, "check": "false", "checkmate": "false" }
-                else:
-                    game = { "board": main.game.board, "turn": main.game.turn, "check": "true", "checkmate": "false" }
+                game = { "board": main.game.board, "turn": main.game.turn, "check": "false", "checkmate": "false" }
+                return jsonify(game)
             else:
                 game = { "board": main.game.board, "posDir": piece.posDir,"turn": main.game.turn, "check": "false", "checkmate": "false" }
+                return jsonify(game)
         else:
             game = { "board": main.game.board, "turn": main.game.turn, "check": "false", "checkmate": "false" }
+            return jsonify(game)
     return jsonify(game)
 
 if __name__ == '__main__':

@@ -47,19 +47,15 @@ if (board) {
                                 let leftNum = Number.parseInt(innerPosHTML[0], 10);
                                 let rightNum = Number.parseInt(innerPosHTML[3], 10);
                                 let idNum = leftNum + rightNum;
-                                if (innerSquare.classList.contains("select_square") & idNum % 2 == 1) {
-                                    innerSquare.classList.remove("select_square");
-                                    innerSquare.classList.add("green_square");
-                                } else if (innerSquare.classList.contains("select_square") & idNum % 2 == 0) {
-                                    innerSquare.classList.remove("select_square");
-                                    innerSquare.classList.add("beige_square");
+                                if (innerSquare.children.length > 0 && innerSquare.children[0].classList.contains("gray_posDir")) {
+                                    innerSquare.innerHTML = "";
                                 }
-                                if (innerSquare.classList.contains("yellow_posDir") & idNum % 2 == 1) {
-                                    innerSquare.classList.remove("yellow_posDir");
-                                    innerSquare.classList.add("green_square");
-                                } else if (innerSquare.classList.contains("yellow_posDir") & idNum % 2 == 0) {
-                                    innerSquare.classList.remove("yellow_posDir");
+                                if (innerSquare.classList.contains("select_square") & idNum % 2 == 0) {
+                                    innerSquare.classList.remove("select_square");
                                     innerSquare.classList.add("beige_square");
+                                } else if (innerSquare.classList.contains("select_square") & idNum % 2 == 1) {
+                                    innerSquare.classList.remove("select_square");
+                                    innerSquare.classList.add("green_square");
                                 }
                             }
                         }
@@ -72,6 +68,7 @@ if (board) {
                         }
                     }
                     if (e.currentTarget.children.length > 0) {
+                        console.log(e.currentTarget.children);
                         let pos_id = e.currentTarget.children[0].src;
                         pos_color = pos_id[37];
                         if (pos_color === turn[0]) {
@@ -103,12 +100,8 @@ if (board) {
                             }
                             for (let name of possibleDir) {
                                 const element = document.getElementById(name);
-                                if (element.classList.contains('beige_square')) {
-                                    element.classList.remove("beige_square");
-                                    element.classList.add("yellow_posDir");
-                                } else if (element.classList.contains('green_square')) {
-                                    element.classList.remove("green_square");
-                                    element.classList.add("yellow_posDir");
+                                if (element.innerHTML == "") {
+                                    element.insertAdjacentHTML("beforeend", "<div class='gray_posDir'></div>")
                                 }
                             }
                         }
@@ -188,4 +181,30 @@ if (board) {
     executeGame();
 }
 
+
+// innerSquare.classList.remove("select_square");
+// innerSquare.classList.add("green_square");
+
+// } else if (innerSquare.classList.contains("select_square") & idNum % 2 == 0) {
+//     innerSquare.innerHTML = "";
+//     innerSquare.classList.remove("select_square");
+//     innerSquare.classList.add("beige_square");
+// }
+// if (innerSquare.classList.contains("yellow_posDir") & idNum % 2 == 1) {
+//     innerSquare.innerHTML = "";
+//     innerSquare.classList.remove("yellow_posDir");
+//     innerSquare.classList.add("green_square");
+// } else if (innerSquare.classList.contains("yellow_posDir") & idNum % 2 == 0) {
+//     innerSquare.innerHTML = "";
+//     innerSquare.classList.remove("yellow_posDir");
+//     innerSquare.classList.add("beige_square");
+// }
+// if (element.classList.contains('beige_square')) {
+// element.classList.remove("beige_square");
+// element.classList.add("yellow_posDir");
+// } else if (element.classList.contains('green_square')) {
+    // element.classList.remove("green_square");
+    // element.insertAdjacentHTML("beforeend", "<div class='gray_posDir'></div>")
+    // element.classList.add("yellow_posDir");
+// }
 
