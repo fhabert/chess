@@ -68,7 +68,6 @@ if (board) {
                         }
                     }
                     if (e.currentTarget.children.length > 0) {
-                        console.log(e.currentTarget.children);
                         let pos_id = e.currentTarget.children[0].src;
                         pos_color = pos_id[37];
                         if (pos_color === turn[0]) {
@@ -100,7 +99,7 @@ if (board) {
                             }
                             for (let name of possibleDir) {
                                 const element = document.getElementById(name);
-                                if (element.innerHTML == "") {
+                                if (element.children.length == 0) {
                                     element.insertAdjacentHTML("beforeend", "<div class='gray_posDir'></div>")
                                 }
                             }
@@ -122,6 +121,7 @@ if (board) {
                         const turnData_json = JSON.parse(turnData_info);
                         turn = turnData_json["turn"]
                         if (differentArray(updated_json_board, init_json_board)) {
+                            console.log("hey");
                             board.innerHTML = "";
                             if (turn == "white") {
                                 for (let i = 0; i < 8; i++) {
