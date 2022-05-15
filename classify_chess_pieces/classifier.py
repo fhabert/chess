@@ -71,7 +71,6 @@ def get_excel_pieces():
       img = load_img(f"./chess_pieces/{key}/{key}{i}.png")
       data = img_to_array(img)
       temp.append((key, data))
-  # mixt_images = temp
   mixt_images = shuffle(temp, random_state=0)
   num = round(len(temp)*0.8)
   with open('./dataset/pieces_train.csv', 'w', newline='') as f:
@@ -123,14 +122,3 @@ get_excel_pieces()
 # get_excel_boards()
 # create_diagram()
 # get_board_diagram()
-
-
-  # temp = []
-  # for key, _ in chess_piece.pieces.items():
-  #   count = 0
-  #   for _ in chess_piece.pieces[key]:
-  #     img = load_img(f"../chess_pieces/{key}/{key}{count}.png")
-  #     data = img_to_array(img)
-  #     temp.append((key, data))
-  #     count += 1
-  # # mixt_images = shuffle(temp, random_state=0)

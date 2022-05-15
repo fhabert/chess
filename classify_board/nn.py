@@ -120,13 +120,10 @@ def get_value(n, value):
     csv_data = pd.read_csv("./dataset/created_boards.csv", encoding="utf-8", sep=";")
     correct_mat = []
     correct_mat = np.split(np.array(csv_data.iloc[value-1]), 8)
-    scores = []
     matrix = get_matrix(img, n)
     result = get_score(matrix, correct_mat)
-    scores.append(result)
     print("Result: " + str(result))
-    mid_score = round(sum(scores) / len(scores))
-    return mid_score, scores
+    return result
 
 # print(get_value(1))
 
@@ -182,12 +179,12 @@ def get_graphs(graph, title):
 # get_graphs(graph, title)
 
 inp_nodes = 1200
-hid_nodes = 300
+hid_nodes = 600
 out_nodes = 14
 data_file = pd.read_csv("./dataset/pieces_train.csv", encoding="utf-8", sep=";",header=None)
 train_file = pd.DataFrame(data_file)
 epochs = 25
-n = neuralNetwork(inp_nodes, hid_nodes, out_nodes, 0.3)
+n = neuralNetwork(inp_nodes, hid_nodes, out_nodes, 0.1)
 for _ in range(epochs):
     for i in range(len(train_file)):
         all_values = train_file.iloc[i]
@@ -196,5 +193,12 @@ for _ in range(epochs):
         targets[int(float(all_values[0]))-1] = 0.99
         n.train(inputs, targets)
     print("new epochs")
-result, scores = get_value(n, 1)
-print(result, scores)
+result = get_value(n, 1)
+# result = ""
+# for i in range(len(n.wih)):
+#     for j in range(len(n.wih[0])):
+#         result += n.wih[i][j]
+
+# with open('./reseau.txt', 'w', newline="") as f:
+#     f.write('readme')
+print(result)

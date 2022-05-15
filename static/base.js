@@ -121,7 +121,6 @@ if (board) {
                         const turnData_json = JSON.parse(turnData_info);
                         turn = turnData_json["turn"]
                         if (differentArray(updated_json_board, init_json_board)) {
-                            console.log("hey");
                             board.innerHTML = "";
                             if (turn == "white") {
                                 for (let i = 0; i < 8; i++) {

@@ -90,11 +90,23 @@ def shuffle_board():
         for piece in item:
             actual_board.append(piece)
     shuffle_board = shuffle(actual_board)
+    colors = []
+    for i in range(LINES):
+        for j in range(COLUMNS):
+            if i % 2 == 0:
+                if j % 2 == 0:
+                    colors.append("sw")
+                elif j % 2 != 0:
+                    colors.append("sb")
+            elif i % 2 != 0:
+                if j % 2 == 0:
+                    colors.append("sb")
+                elif j % 2 != 0:
+                    colors.append("sw")
+
     for i in range(len(shuffle_board)):
-        if shuffle_board[i] == 0 and i % 2 == 0:
-            shuffle_board[i] = "sw"
-        elif shuffle_board[i] == 0 and i % 2 == 1:
-            shuffle_board[i] = "sb"
+        if shuffle_board[i] == 0:
+            shuffle_board[i] = colors[i]
     outer_li = []
     inner_li = []
     counter = 0
