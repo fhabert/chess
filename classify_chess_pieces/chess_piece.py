@@ -1,6 +1,8 @@
 from PIL import Image
 import pandas as pd
+import os
 
+COLUMNS = 8
 created_images = []
 created_boards_img = []
 pieces = {
@@ -32,34 +34,40 @@ for i in range(1,14,1):
     resize = image.resize((400, 400))
     created_images.append(resize)
 
-for i in range(1, 61, 1):
-    target = f"./created_boards/new_board{i}.png"
-    image = Image.open(target)
-    resize = image.resize((400, 400))
-    created_boards_img.append(resize)
 
-data = pd.read_csv("./dataset/created_boards.csv", encoding="utf-8", sep=";", header=None)
-games = data.iloc[:60]
-count = 0
-images_pos = []
+names = []
+images = []
+for key,  _ in pieces.items():
+    names.append(key)
+big_img = Image.open("./full_game/game4.png")
+resize = big_img.resize((400, 400))
+for _ in range(30):
+    for i in range(12):
+        img_w = resize.crop((0, 100, 50, 150))
+        img_b = resize.crop((50, 100, 100, 150))
+        resize_item_w = img_w.resize((20, 20))
+        resize_item_b = img_b.resize((20, 20))
+        img = Image.open(f"./unique_pieces/{names[i]}.png")
+        img_res = img.resize((50, 50))
+        img_w.paste(img_res,img_res)
+        img_w_res = img_w.resize((20, 20))
+        img_b.paste(img_res,img_res)
+        img_b_res = img_b.resize((20, 20))
+        pieces[names[i]].append(img_w_res)
+        pieces[names[i]].append(img_b_res)
 
-for i in range(0, 400, 50):
-    inner_list = []
-    for j in range(0, 400, 50):
-        pos = (j, i, j+50, i+50)
-        inner_list.append(pos)
-    images_pos.append(inner_list)
+    img_w = resize.crop((0, 100, 50, 150))
+    img_b = resize.crop((50, 100, 100, 150))
+    pieces["sw"].append(img_w.resize((20, 20)))
+    pieces["sb"].append(img_b.resize((20, 20)))
+    pieces["sw"].append(img_w.resize((20, 20)))
+    pieces["sb"].append(img_b.resize((20, 20)))
 
-count = 0
-for k in range(len(created_boards_img)):
-    for i in range(len(images_pos)):
-        for j in range(len(images_pos)):
-            img = created_boards_img[k].crop(images_pos[i][j])
-            resize_item = img.resize((20, 20))
-            index = list(games.iloc[k])[count]
-            pieces[index].append(resize_item)
-            count += 1
-    count = 0
+
+for key, _ in pieces.items():
+    dir = f'./chess_pieces/{key}'
+    for f in os.listdir(dir):
+        os.remove(os.path.join(dir, f))
 
 for item in created_images:
     for b_piece in black_positions:
@@ -74,5 +82,10 @@ for item in created_images:
 for key, _ in pieces.items():
     count = 0
     for item in pieces[key]:
-        item.save(f"./chess_pieces/{key}/{key}{count}.png")
+        if count < 100:
+            item.save(f"./chess_pieces/{key}/{key}{count}.png")
         count += 1
+
+
+
+

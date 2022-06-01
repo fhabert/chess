@@ -5,6 +5,7 @@ from keras.preprocessing.image import load_img
 from keras.preprocessing.image import img_to_array
 import matplotlib.image as mpimg
 from PIL import Image
+import os
 import pandas as pd
 import csv
 from sklearn.utils import shuffle
@@ -95,7 +96,7 @@ def get_excel_pieces():
 
 def get_excel_boards():
   temp = []
-  for i in range(1, 100, 1):
+  for i in range(1, 40):
     img = load_img(f"./resized_boards/new_board{i}.png")
     data = img_to_array(img)
     temp.append(data)
@@ -122,3 +123,4 @@ get_excel_pieces()
 # get_excel_boards()
 # create_diagram()
 # get_board_diagram()
+# len(chess_piece.pieces[key])

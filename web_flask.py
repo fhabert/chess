@@ -1,7 +1,10 @@
+import json
 from flask import Flask, render_template, request, jsonify
 from flask_cors import CORS
 import main
 import requests
+from PIL import Image
+from classify_board import tensor
 
 app = Flask(__name__)
 app.secret_key = "PaRiS"
@@ -17,6 +20,17 @@ def home():
     checkmate = res_json["checkmate"]
     return render_template("base.html", board=game_board, turn=turn, check=check, checkmate=checkmate)
 
+@app.route('/train', methods=["GET", "POST"])
+def train():
+    if request.method == 'POST':
+        img_storage = request.files["chess_pic"]
+        img = Image.open(img_storage)
+        model = tensor.get_my_model()
+        predicted_mat = tensor.get_matrix_nn(img, model)
+        mat_json = { "board": predicted_mat}
+        return render_template("train.html", board=mat_json["board"])
+    else:
+        return render_template("upload.html")
 
 @app.route('/api/v1/board', methods=['GET'])
 def api_all():

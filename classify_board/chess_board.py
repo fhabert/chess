@@ -6,7 +6,7 @@ from PIL import Image
 
 COLUMNS = 8
 LINES = 8
-COUNT = 1
+COUNT = 0
 
 images = [[0]*LINES for _ in range(LINES)]
 

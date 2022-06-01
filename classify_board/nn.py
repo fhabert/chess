@@ -117,9 +117,9 @@ def get_score(mat, correct):
 
 def get_value(n, value):
     img = Image.open(f"./created_boards/new_board{value}.png")
-    csv_data = pd.read_csv("./dataset/created_boards.csv", encoding="utf-8", sep=";")
+    csv_data = pd.read_csv("./dataset/created_boards.csv", encoding="utf-8", sep=";", header=None)
     correct_mat = []
-    correct_mat = np.split(np.array(csv_data.iloc[value-1]), 8)
+    correct_mat = np.split(np.array(csv_data.iloc[value]), 8)
     matrix = get_matrix(img, n)
     result = get_score(matrix, correct_mat)
     print("Result: " + str(result))
@@ -170,14 +170,6 @@ def get_graphs(graph, title):
     plt.tight_layout()
     plt.savefig("./graphs/learning_rates.png")
 
-# graph = {'0.1': [3, 15, 14, 23], 
-#         '0.3': [25, 3, 28, 26], 
-#         '0.5': [1, 1, 3, 1]}
-
-# title = "Assessing the lr on different epochs (75 bo/ 400 hn)"
-# graph = obtain_best_lr()
-# get_graphs(graph, title)
-
 inp_nodes = 1200
 hid_nodes = 600
 out_nodes = 14
@@ -193,12 +185,15 @@ for _ in range(epochs):
         targets[int(float(all_values[0]))-1] = 0.99
         n.train(inputs, targets)
     print("new epochs")
-result = get_value(n, 1)
-# result = ""
-# for i in range(len(n.wih)):
-#     for j in range(len(n.wih[0])):
-#         result += n.wih[i][j]
-
-# with open('./reseau.txt', 'w', newline="") as f:
-#     f.write('readme')
+result = get_value(n, 0)
 print(result)
+
+
+
+# graph = {'0.1': [3, 15, 14, 23], 
+#         '0.3': [25, 3, 28, 26], 
+#         '0.5': [1, 1, 3, 1]}
+
+# title = "Assessing the lr on different epochs (75 bo/ 400 hn)"
+# graph = obtain_best_lr()
+# get_graphs(graph, title)
